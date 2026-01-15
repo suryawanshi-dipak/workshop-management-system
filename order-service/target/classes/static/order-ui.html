@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Workshop Order</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            padding: 20px;
+        }
+
+        h2 {
+            margin-bottom: 10px;
+        }
+
+        .container {
+            background: #fff;
+            padding: 20px;
+            max-width: 1000px;
+            margin: auto;
+            border-radius: 6px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 12px;
+        }
+
+        .form-group {
+            flex: 1;
+        }
+
+        label {
+            font-size: 14px;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        input {
+            width: 100%;
+            padding: 6px;
+            font-size: 14px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 6px;
+            text-align: center;
+        }
+
+        th {
+            background: #f0f0f0;
+        }
+
+        button {
+            padding: 8px 14px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+
+        .btn-add {
+            background: #007bff;
+            color: white;
+            border: none;
+        }
+
+        .btn-save {
+            background: #28a745;
+            color: white;
+            border: none;
+        }
+
+        .btn-remove {
+            background: #dc3545;
+            color: white;
+            border: none;
+        }
+
+        .total-box {
+            text-align: right;
+            margin-top: 10px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h2>Create Order</h2>
+
+    <!-- ORDER DETAILS -->
+    <div class="form-row">
+        <div class="form-group">
+            <label>License of Car</label>
+            <input type="text" id="license">
+        </div>
+
+        <div class="form-group">
+            <label>Order Number</label>
+            <input type="text" id="orderNumber">
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group">
+            <label>Customer Name</label>
+            <input type="text" id="customerName">
+        </div>
+
+        <div class="form-group">
+            <label>Customer Number</label>
+            <input type="text" id="customerNumber">
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group">
+            <label>Car Mileage</label>
+            <input type="number" id="mileage">
+        </div>
+
+        <div class="form-group">
+            <label>Car Make</label>
+            <input type="text" id="carMake">
+        </div>
+    </div>
+
+    <!-- PARTS GRID -->
+    <h3>Parts</h3>
+
+    <table id="partsTable">
+        <thead>
+        <tr>
+            <th>Part No</th>
+            <th>Description</th>
+            <th>Quantity</th>
+            <th>Price</th>
+            <th>Total</th>
+            <th>Action</th>
+        </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <button class="btn-add" onclick="addPart()">+ Add Part</button>
+
+    <div class="total-box">
+        Parts Total: ₹ <span id="grandTotal">0</span>
+    </div>
+
+    <button class="btn-save" onclick="saveOrder()">Save Order</button>
+
+</div>
+
+<script>
+    function addPart() {
+        const table = document.getElementById("partsTable").getElementsByTagName("tbody")[0];
+
+        const row = table.insertRow();
+
+        row.innerHTML = `
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+            <td><input type="number" value="1" oninput="calculateTotal()"></td>
+            <td><input type="number" value="0" oninput="calculateTotal()"></td>
+            <td class="rowTotal">0</td>
+            <td><button class="btn-remove" onclick="removeRow(this)">X</button></td>
+        `;
+    }
+
+    function removeRow(btn) {
+        btn.parentElement.parentElement.remove();
+        calculateTotal();
+    }
+
+    function calculateTotal() {
+        let total = 0;
+
+        document.querySelectorAll("#partsTable tbody tr").forEach(row => {
+            const qty = row.cells[2].children[0].value || 0;
+            const price = row.cells[3].children[0].value || 0;
+            const rowTotal = qty * price;
+            row.cells[4].innerText = rowTotal;
+            total += rowTotal;
+        });
+
+        document.getElementById("grandTotal").innerText = total;
+    }
+
+    function saveOrder() {
+
+        const parts = [];
+        document.querySelectorAll("#partsTable tbody tr").forEach(row => {
+            parts.push({
+                partNo: row.cells[0].children[0].value,
+                description: row.cells[1].children[0].value,
+                quantity: row.cells[2].children[0].value,
+                price: row.cells[3].children[0].value
+            });
+        });
+
+        const order = {
+            license: document.getElementById("license").value,
+            orderNumber: document.getElementById("orderNumber").value,
+            customerName: document.getElementById("customerName").value,
+            customerNumber: document.getElementById("customerNumber").value,
+            mileage: document.getElementById("mileage").value,
+            carMake: document.getElementById("carMake").value,
+            parts: parts
+        };
+
+        fetch("/api/orders", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(order)
+        })
+        .then(response => response.text())
+        .then(data => {
+            alert(data);
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            alert("Error saving order");
+        });
+    }
+</script>
+
+</body>
+</html>

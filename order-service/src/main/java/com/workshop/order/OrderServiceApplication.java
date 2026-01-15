@@ -2,11 +2,12 @@ package com.workshop.order;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
-@SpringBootApplication(exclude = { DataSourceAutoConfiguration.class })
-@EnableDiscoveryClient
+@SpringBootApplication
+@EnableJpaRepositories("com.workshop.order.repository")
+@EntityScan("com.workshop.order.entity")
 public class OrderServiceApplication {
 
     public static void main(String[] args) {
