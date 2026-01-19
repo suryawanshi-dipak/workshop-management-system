@@ -19,4 +19,14 @@ public class OrderController {
     public Order createOrder(@RequestBody Order order) {
         return service.saveOrder(order);
     }
+
+    // 🔍 SEARCH ORDER
+    @GetMapping("/search")
+    public Order searchOrder(
+            @RequestParam(name = "orderNumber", required = false) String orderNumber,
+            @RequestParam(name = "license", required = false) String license) {
+
+        return service.searchOrder(orderNumber, license)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+    }
 }
