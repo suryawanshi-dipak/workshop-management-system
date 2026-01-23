@@ -15,12 +15,13 @@ public class OrderController {
         this.service = service;
     }
 
+    // CREATE / UPDATE ORDER
     @PostMapping
-    public Order createOrder(@RequestBody Order order) {
+    public Order saveOrder(@RequestBody Order order) {
         return service.saveOrder(order);
     }
 
-    // 🔍 SEARCH ORDER
+    // 🔍 SEARCH ORDER  (🔥 FIXED 🔥)
     @GetMapping("/search")
     public Order searchOrder(
             @RequestParam(name = "orderNumber", required = false) String orderNumber,
@@ -28,5 +29,11 @@ public class OrderController {
 
         return service.searchOrder(orderNumber, license)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
+    }
+
+    // ➕ CREATE NEW ORDER
+    @GetMapping("/new")
+    public Order createNewOrder() {
+        return service.createNewOrder();
     }
 }

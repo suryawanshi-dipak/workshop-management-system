@@ -21,7 +21,7 @@ public class OrderPart {
     @JsonBackReference
     private Order order;
 
-    // ===== getters & setters =====
+    // getters and setters
 
     public Long getId() {
         return id;

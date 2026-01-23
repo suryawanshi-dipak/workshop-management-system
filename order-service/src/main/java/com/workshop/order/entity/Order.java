@@ -13,18 +13,24 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(unique = true, nullable = false)
     private String orderNumber;
+
     private String license;
     private String customerName;
     private String customerNumber;
     private Integer carMileage;
     private String carMake;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
+    @OneToMany(
+            mappedBy = "order",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
     @JsonManagedReference
     private List<OrderPart> parts;
 
-    // ===== getters & setters =====
+    // getters and setters
 
     public Long getId() {
         return id;
