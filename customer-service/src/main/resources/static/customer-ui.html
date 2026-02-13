@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Management System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 968px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 50px rgba(0,0,0,0.15);
+        }
+
+        .card h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #1a202c;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card h2::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 2px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #4a5568;
+            margin-bottom: 8px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="tel"] {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: all 0.3s ease;
+            background: #f7fafc;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        input::placeholder {
+            color: #a0aec0;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #edf2f7;
+            color: #4a5568;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        .btn-danger {
+            background: #fc8181;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #f56565;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 101, 101, 0.4);
+        }
+
+        .btn-success {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #38a169;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .customer-table {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 20px;
+        }
+
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        th {
+            padding: 14px 16px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        th:first-child {
+            border-top-left-radius: 8px;
+        }
+
+        th:last-child {
+            border-top-right-radius: 8px;
+        }
+
+        tbody tr {
+            background: white;
+            transition: background 0.2s ease;
+        }
+
+        tbody tr:hover {
+            background: #f7fafc;
+        }
+
+        tbody tr:not(:last-child) {
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        td {
+            padding: 14px 16px;
+            font-size: 0.9rem;
+            color: #2d3748;
+        }
+
+        .action-btn {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            margin-right: 6px;
+            min-width: 70px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: #e6fffa;
+            color: #234e52;
+        }
+
+        .alert {
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            display: none;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .alert-success {
+            background: #c6f6d5;
+            color: #22543d;
+            border-left: 4px solid #38a169;
+        }
+
+        .alert-error {
+            background: #fed7d7;
+            color: #742a2a;
+            border-left: 4px solid #e53e3e;
+        }
+
+        .alert-info {
+            background: #bee3f8;
+            color: #2c5282;
+            border-left: 4px solid #3182ce;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+        }
+
+        .spinner {
+            border: 3px solid #e2e8f0;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #718096;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .stat-card h3 {
+            font-size: 0.875rem;
+            color: #718096;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-card p {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚗 Customer Management System</h1>
+            <p>Workshop Customer Database</p>
+        </div>
+
+        <div id="alertBox" class="alert"></div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <h3>Total Customers</h3>
+                <p id="totalCustomers">0</p>
+            </div>
+        </div>
+
+        <div class="grid">
+            <!-- Search Section -->
+            <div class="card">
+                <h2>🔍 Search Customer</h2>
+                <div class="form-group">
+                    <label for="searchPhone">Phone Number</label>
+                    <input type="tel" id="searchPhone" placeholder="Enter phone number">
+                </div>
+                <div class="form-group">
+                    <label for="searchLicense">License Number</label>
+                    <input type="text" id="searchLicense" placeholder="Enter license number">
+                </div>
+                <div class="button-group">
+                    <button class="btn-primary" onclick="searchCustomer()">Search</button>
+                    <button class="btn-secondary" onclick="clearSearch()">Clear</button>
+                </div>
+            </div>
+
+            <!-- Form Section -->
+            <div class="card">
+                <h2 id="formTitle">➕ Add New Customer</h2>
+                <input type="hidden" id="customerId">
+                
+                <div class="form-group">
+                    <label for="name">Full Name *</label>
+                    <input type="text" id="name" placeholder="Enter full name" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="phone">Phone Number *</label>
+                        <input type="tel" id="phone" placeholder="Enter phone" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="license">License Number</label>
+                        <input type="text" id="license" placeholder="Enter license">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" placeholder="Enter email">
+                </div>
+
+                <div class="form-group">
+                    <label for="address">Address</label>
+                    <input type="text" id="address" placeholder="Enter address">
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-primary" onclick="saveCustomer()">
+                        <span id="saveButtonText">Save Customer</span>
+                    </button>
+                    <button class="btn-danger" onclick="deleteCustomer()" id="deleteBtn" style="display:none;">
+                        Delete
+                    </button>
+                    <button class="btn-secondary" onclick="resetForm()">
+                        Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Customer List -->
+        <div class="card">
+            <h2>📋 Customer List</h2>
+            <div class="button-group" style="margin-bottom: 20px;">
+                <button class="btn-success" onclick="loadAllCustomers()">Refresh List</button>
+            </div>
+            <div id="customerTableContainer">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading customers...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = "http://localhost:8083/api/customers";
+
+        // Load customers on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAllCustomers();
+        });
+
+        // Show alert message
+        function showAlert(message, type) {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.className = `alert alert-${type}`;
+            alertBox.textContent = message;
+            alertBox.style.display = 'block';
+            
+            setTimeout(() => {
+                alertBox.style.display = 'none';
+            }, 5000);
+        }
+
+        // Load all customers
+        function loadAllCustomers() {
+            const container = document.getElementById('customerTableContainer');
+            container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading customers...</p></div>';
+
+            fetch(API)
+                .then(response => {
+                    if (!response.ok) throw new Error('Failed to load customers');
+                    return response.json();
+                })
+                .then(customers => {
+                    document.getElementById('totalCustomers').textContent = customers.length;
+                    
+                    if (customers.length === 0) {
+                        container.innerHTML = `
+                            <div class="empty-state">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                                    </path>
+                                </svg>
+                                <h3>No customers found</h3>
+                                <p>Start by adding your first customer</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    let tableHTML = `
+                        <div class="customer-table">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Name</th>
+                                        <th>Phone</th>
+                                        <th>License</th>
+                                        <th>Email</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+
+                    customers.forEach(customer => {
+                        tableHTML += `
+                            <tr>
+                                <td><span class="badge">${customer.id}</span></td>
+                                <td><strong>${customer.name}</strong></td>
+                                <td>${customer.phone}</td>
+                                <td>${customer.license || '-'}</td>
+                                <td>${customer.email || '-'}</td>
+                                <td>
+                                    <button class="btn-primary action-btn" onclick='editCustomer(${JSON.stringify(customer)})'>
+                                        Edit
+                                    </button>
+                                    <button class="btn-danger action-btn" onclick="confirmDelete(${customer.id})">
+                                        Delete
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+
+                    tableHTML += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+
+                    container.innerHTML = tableHTML;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <p style="color: #e53e3e;">Failed to load customers. Please check if the server is running.</p>
+                        </div>
+                    `;
+                    showAlert('Failed to load customers: ' + error.message, 'error');
+                });
+        }
+
+        // Save customer
+        function saveCustomer() {
+            const name = document.getElementById('name').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const license = document.getElementById('license').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const address = document.getElementById('address').value.trim();
+            const idVal = document.getElementById('customerId').value;
+
+            // Validation
+            if (!name) {
+                showAlert('Please enter customer name', 'error');
+                return;
+            }
+            if (!phone) {
+                showAlert('Please enter phone number', 'error');
+                return;
+            }
+
+            const customer = { name, phone, email, address };
+            if (license) customer.license = license;
+            if (idVal) customer.id = Number(idVal);
+
+            const saveBtn = document.querySelector('.btn-primary');
+            const originalText = saveBtn.textContent;
+            saveBtn.textContent = 'Saving...';
+            saveBtn.disabled = true;
+
+            fetch(API, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(customer)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error(text || 'Failed to save customer');
+                    });
+                }
+                return response.json();
+            })
+            .then(savedCustomer => {
+                showAlert(
+                    idVal ? 'Customer updated successfully!' : 'Customer created successfully!',
+                    'success'
+                );
+                resetForm();
+                loadAllCustomers();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Error: ' + error.message, 'error');
+            })
+            .finally(() => {
+                saveBtn.textContent = originalText;
+                saveBtn.disabled = false;
+            });
+        }
+
+        // Search customer
+        function searchCustomer() {
+            const phone = document.getElementById('searchPhone').value.trim();
+            const license = document.getElementById('searchLicense').value.trim();
+
+            if (!phone && !license) {
+                showAlert('Please enter phone or license number to search', 'info');
+                return;
+            }
+
+            fetch(`${API}/search?phone=${phone}&license=${license}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Customer not found');
+                    }
+                    return response.json();
+                })
+                .then(customer => {
+                    editCustomer(customer);
+                    showAlert('Customer found!', 'success');
+                    clearSearch();
+                })
+                .catch(error => {
+                    showAlert('Customer not found', 'error');
+                });
+        }
+
+        // Edit customer
+        function editCustomer(customer) {
+            document.getElementById('customerId').value = customer.id;
+            document.getElementById('name').value = customer.name;
+            document.getElementById('phone').value = customer.phone;
+            document.getElementById('license').value = customer.license || '';
+            document.getElementById('email').value = customer.email || '';
+            document.getElementById('address').value = customer.address || '';
+            
+            document.getElementById('formTitle').innerHTML = '✏️ Edit Customer';
+            document.getElementById('deleteBtn').style.display = 'block';
+            document.getElementById('saveButtonText').textContent = 'Update Customer';
+
+            // Scroll to form
+            document.querySelector('.card').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Delete customer
+        function deleteCustomer() {
+            const id = document.getElementById('customerId').value;
+            if (!id) {
+                showAlert('No customer selected', 'error');
+                return;
+            }
+            confirmDelete(id);
+        }
+
+        function confirmDelete(id) {
+            if (!confirm('Are you sure you want to delete this customer?')) {
+                return;
+            }
+
+            fetch(`${API}/${id}`, {
+                method: "DELETE"
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to delete customer');
+                showAlert('Customer deleted successfully!', 'success');
+                resetForm();
+                loadAllCustomers();
+            })
+            .catch(error => {
+                showAlert('Error deleting customer: ' + error.message, 'error');
+            });
+        }
+
+        // Reset form
+        function resetForm() {
+            document.getElementById('customerId').value = '';
+            document.getElementById('name').value = '';
+            document.getElementById('phone').value = '';
+            document.getElementById('license').value = '';
+            document.getElementById('email').value = '';
+            document.getElementById('address').value = '';
+            document.getElementById('formTitle').innerHTML = '➕ Add New Customer';
+            document.getElementById('deleteBtn').style.display = 'none';
+            document.getElementById('saveButtonText').textContent = 'Save Customer';
+        }
+
+        // Clear search
+        function clearSearch() {
+            document.getElementById('searchPhone').value = '';
+            document.getElementById('searchLicense').value = '';
+        }
+    </script>
+</body>
+</html>
