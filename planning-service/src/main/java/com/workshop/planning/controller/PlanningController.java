@@ -1,10 +1,9 @@
 package com.workshop.planning.controller;
 
+import com.workshop.planning.dto.CreateOrderResponseDTO;
 import com.workshop.planning.entity.Planning;
 import com.workshop.planning.service.PlanningService;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 
 @RestController
@@ -29,10 +28,10 @@ public class PlanningController {
     public Planning createPlanning(@RequestBody Planning planning) {
         return planningService.createPlanning(planning);
     }
-    /*
+
     @PostMapping("/{id}/create-order")
-    public Planning createOrder(@PathVariable Long id) {
+    public CreateOrderResponseDTO createOrder(@PathVariable("id") Long id) {
+System.out.println("/{id}/create-order called");        
         return planningService.createOrderFromPlanning(id);
     }
-        */
 }

@@ -1,8 +1,11 @@
 package com.workshop.order.controller;
 
+import com.workshop.order.dto.CreateOrderRequest;
+import com.workshop.order.dto.CreateOrderResponse;
 import com.workshop.order.entity.Order;
 import com.workshop.order.service.OrderService;
 import org.springframework.web.bind.annotation.*;
+
 
 @RestController
 @RequestMapping("/api/orders")
@@ -36,4 +39,15 @@ public class OrderController {
     public Order createNewOrder() {
         return service.createNewOrder();
     }
+
+    // Create order from planning
+    @PostMapping("/from-planning")
+    public CreateOrderResponse createFromPlanning(@RequestBody CreateOrderRequest request) {       
+System.out.println("/from-planning called");        
+        Order ord = service.createOrderFromPlanning(request);
+        CreateOrderResponse response = new CreateOrderResponse(ord.getId(), ord.getOrderNumber());
+        
+        return response;
+    }
+    
 }
