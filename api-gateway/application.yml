@@ -5,6 +5,19 @@ spring:
   application:
     name: api-gateway
 
+  cloud:
+    gateway:
+      routes:
+        - id: planning-service
+          uri: lb://PLANNING-SERVICE
+          predicates:
+            - Path=/api/plannings/**
+
+        - id: order-service
+          uri: lb://ORDER-SERVICE
+          predicates:
+            - Path=/api/orders/**
+
 eureka:
   client:
     service-url:
