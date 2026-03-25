@@ -26,3 +26,18 @@ eureka:
 
 logging:
   leve.org.springframework.data.jpa.repository: DEBUG
+
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+        
+resilience4j:
+  circuitbreaker:
+    instances:
+      order-service:
+        slidingWindowSize: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s        

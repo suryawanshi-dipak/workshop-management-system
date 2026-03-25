@@ -3,6 +3,9 @@ package com.workshop.planning.controller;
 import com.workshop.planning.dto.CreateOrderResponseDTO;
 import com.workshop.planning.entity.Planning;
 import com.workshop.planning.service.PlanningService;
+
+import java.util.concurrent.CompletableFuture;
+
 import org.springframework.web.bind.annotation.*;
 
 
@@ -30,8 +33,8 @@ public class PlanningController {
     }
 
     @PostMapping("/{id}/create-order")
-    public CreateOrderResponseDTO createOrder(@PathVariable("id") Long id) {
-System.out.println("/{id}/create-order called");        
+    public CompletableFuture<CreateOrderResponseDTO> createOrder(@PathVariable("id") Long id) {
+        System.out.println("/{id}/create-order called");        
         return planningService.createOrderFromPlanning(id);
     }
 }
