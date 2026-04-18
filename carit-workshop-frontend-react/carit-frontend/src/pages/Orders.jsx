@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { orderService } from '../services/api';
 import { useToast } from '../components/Toast';
+
+const API_URL = "http://localhost:8082/api/orders";
 
 const STATUS_OPTIONS = ['Pending','Scheduled','In Progress','Completed','Cancelled'];
 const STATUS_COLORS = { 'In Progress':'info','Completed':'success','Pending':'warning','Scheduled':'neutral','Cancelled':'danger' };
@@ -19,6 +20,46 @@ const MOCK = [
   { id: 3, orderId: 'ORD-003', customerId: 'CUST-003', customerName: 'Pieter Smit', carId: 'CAR-003', carInfo: 'VW Golf (2018)', serviceType: 'Brake Inspection', status: 'Pending', createdAt: '2024-01-14', price: '€120', partLines: [], activityLines: [] },
   { id: 4, orderId: 'ORD-004', customerId: 'CUST-004', customerName: 'Maria Jansen', carId: 'CAR-004', carInfo: 'Ford Focus (2020)', serviceType: 'Tire Change', status: 'Scheduled', createdAt: '2024-01-16', price: '€95', partLines: [], activityLines: [] },
 ];
+
+async function apiFetch(path = "", options = {}) {
+  const res = await fetch(`${API_URL}${path}`, {
+    headers: { 'Content-Type': 'application/json' },
+    ...options,
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`HTTP ${res.status} - ${text}`);
+  }
+    return res.json();
+}
+
+function getAllOrders() {
+  return apiFetch("");  // -> /api/orders
+}
+function getNewOrderNumber() {
+  return apiFetch("/new");
+}
+
+function createOrder(payload) {
+  return apiFetch("", {   // ✅ FIXED
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+// ❗ Your backend DOES NOT support these yet
+function updateOrder(id, payload) {
+  return apiFetch("", {   // fallback to POST
+    method: "POST",
+    body: JSON.stringify({ ...payload, id }), // send id
+  });
+}
+
+function deleteOrder(id) {
+  return fetch(`${API_URL}/${id}`, {
+    method: "DELETE",
+  });
+}
 
 function LinesTable({ title, hint, columns, rows, onAdd, onUpdate, onRemove, addLabel }) {
   return (
@@ -89,17 +130,30 @@ export default function Orders() {
 
   const fetchOrders = async () => {
     setLoading(true);
-    try { const res = await orderService.getAll(); setOrders(res.data?.length ? res.data : MOCK); }
-    catch { setOrders(MOCK); }
-    finally { setLoading(false); }
+    try {
+      const data = await getAllOrders();
+      setOrders(Array.isArray(data) && data.length ? data : MOCK);
+    } catch {
+      setOrders(MOCK);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const openNew = () => {
+  const openNew = async () => {
     setEditItem(null);
     setForm({ customerId: '', carId: '', serviceType: '', status: 'Pending', notes: '', price: '' });
-    setPartLines([newPart()]); setActivityLines([newActivity()]);
+    setPartLines([newPart()]);
+    setActivityLines([newActivity()]);
+    try {
+      const data = await getNewOrderNumber();
+      setForm(f => ({ ...f, _orderNumber: data.orderNumber || '' }));
+    } catch {
+      // order number assigned by server on save
+    }
     setShowModal(true);
   };
+
   const openEdit = (item) => {
     setEditItem(item);
     setForm({ customerId: item.customerId || '', carId: item.carId || '', serviceType: item.serviceType || '', status: item.status || 'Pending', notes: item.notes || '', price: item.price || '' });
@@ -112,18 +166,37 @@ export default function Orders() {
     if (!form.serviceType) { addToast('Service type is required.', 'error'); return; }
     setSaving(true);
     try {
-      const payload = { ...form, partLines: partLines.filter(p => p.description), activityLines: activityLines.filter(a => a.description) };
-      if (editItem) { await orderService.update(editItem.id, payload); addToast('Order updated.', 'success'); }
-      else { await orderService.create(payload); addToast('Order created.', 'success'); }
-      setShowModal(false); fetchOrders();
-    } catch { addToast('Saved in demo mode.', 'error'); setShowModal(false); }
-    finally { setSaving(false); }
+      const payload = {
+        ...form,
+        partLines: partLines.filter(p => p.description),
+        activityLines: activityLines.filter(a => a.description),
+      };
+      if (editItem) {
+        await updateOrder(editItem.id, payload);
+        addToast('Order updated.', 'success');
+      } else {
+        await createOrder(payload);
+        addToast('Order created.', 'success');
+      }
+      setShowModal(false);
+      fetchOrders();
+    } catch {
+      addToast('Saved in demo mode.', 'error');
+      setShowModal(false);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDelete = async (item) => {
     if (!window.confirm(`Delete order ${item.orderId}?`)) return;
-    try { await orderService.delete(item.id); addToast('Order deleted.', 'success'); fetchOrders(); }
-    catch { addToast('Delete failed.', 'error'); }
+    try {
+      await deleteOrder(item.id);
+      addToast('Order deleted.', 'success');
+      fetchOrders();
+    } catch {
+      addToast('Delete failed.', 'error');
+    }
   };
 
   const filtered = orders.filter(o => {
@@ -195,12 +268,10 @@ export default function Orders() {
                         </div>
                       </td>
                     </tr>
-                    {/* Expanded lines */}
                     {expandedRow === o.id && (
                       <tr>
                         <td colSpan={9} style={{ padding: 0, background: 'var(--gray-50)' }}>
                           <div style={{ padding: '14px 20px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-                            {/* Part Lines */}
                             <div>
                               <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-500)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
@@ -231,7 +302,6 @@ export default function Orders() {
                                 </table>
                               )}
                             </div>
-                            {/* Activity Lines */}
                             <div>
                               <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-500)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -274,7 +344,6 @@ export default function Orders() {
         </div>
       </div>
 
-      {/* MODAL */}
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" style={{ maxWidth: 700 }} onClick={e => e.stopPropagation()}>

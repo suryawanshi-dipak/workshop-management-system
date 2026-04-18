@@ -11,63 +11,37 @@ public class OrderPart {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String partNo;
+    private String partNumber;
     private String description;
     private Integer quantity;
-    private Double price;
+    private String unit;
+
+    @Column(precision = 10, scale = 2)
+    private java.math.BigDecimal unitPrice;
 
     @ManyToOne
     @JoinColumn(name = "order_id")
     @JsonBackReference
     private Order order;
 
-    // getters and setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public Long getId() {
-        return id;
-    }
+    public String getPartNumber() { return partNumber; }
+    public void setPartNumber(String partNumber) { this.partNumber = partNumber; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 
-    public String getPartNo() {
-        return partNo;
-    }
+    public Integer getQuantity() { return quantity; }
+    public void setQuantity(Integer quantity) { this.quantity = quantity; }
 
-    public void setPartNo(String partNo) {
-        this.partNo = partNo;
-    }
+    public String getUnit() { return unit; }
+    public void setUnit(String unit) { this.unit = unit; }
 
-    public String getDescription() {
-        return description;
-    }
+    public java.math.BigDecimal getUnitPrice() { return unitPrice; }
+    public void setUnitPrice(java.math.BigDecimal unitPrice) { this.unitPrice = unitPrice; }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public Integer getQuantity() {
-        return quantity;
-    }
-
-    public void setQuantity(Integer quantity) {
-        this.quantity = quantity;
-    }
-
-    public Double getPrice() {
-        return price;
-    }
-
-    public void setPrice(Double price) {
-        this.price = price;
-    }
-
-    public Order getOrder() {
-        return order;
-    }
-
-    public void setOrder(Order order) {
-        this.order = order;
-    }
+    public Order getOrder() { return order; }
+    public void setOrder(Order order) { this.order = order; }
 }
