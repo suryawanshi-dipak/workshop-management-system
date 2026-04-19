@@ -6,18 +6,15 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.workshop</groupId>
-    <artifactId>customer-service</artifactId>
-    <version>1.0.0</version>
-
-    <packaging>jar</packaging>
-
     <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.1</version>
-        <relativePath/>
+        <groupId>com.workshop</groupId>
+        <artifactId>workshop-management-system</artifactId>
+        <version>1.0.0</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
+
+    <artifactId>customer-service</artifactId>
+    <packaging>jar</packaging>
 
     <properties>
         <java.version>17</java.version>
@@ -44,11 +41,17 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Dev tools (optional) -->
+        <!-- Dev tools -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
             <scope>runtime</scope>
+        </dependency>
+
+        <!-- Eureka Client — registers with discovery-server -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
         </dependency>
 
     </dependencies>

@@ -19,7 +19,7 @@ public class CustomerController {
         this.service = service;
     }
 
-    // GET ALL CUSTOMERS
+    // GET ALL
     @GetMapping
     public ResponseEntity<List<Customer>> getAllCustomers() {
         return ResponseEntity.ok(service.findAll());
@@ -27,18 +27,19 @@ public class CustomerController {
 
     // GET BY ID
     @GetMapping("/{id}")
-    public ResponseEntity<Customer> getById(@PathVariable Long id) {
+    public ResponseEntity<Customer> getById(@PathVariable("id") Long id) {
         return service.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // CREATE OR UPDATE
+    // CREATE
     @PostMapping
-    public ResponseEntity<?> save(@RequestBody Customer customer) {
+    public ResponseEntity<?> create(@RequestBody Customer customer) {
         try {
+            customer.setId(null);
             Customer saved = service.save(customer);
-            return ResponseEntity.ok(saved);
+            return ResponseEntity.status(HttpStatus.CREATED).body(saved);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
@@ -47,13 +48,31 @@ public class CustomerController {
         }
     }
 
+    // UPDATE
+    @PutMapping("/{id}")
+    public ResponseEntity<?> update(@PathVariable("id") Long id, @RequestBody Customer customer) {
+        try {
+            if (service.findById(id).isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            customer.setId(id);
+            Customer updated = service.save(customer);
+            return ResponseEntity.ok(updated);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error updating customer: " + e.getMessage());
+        }
+    }
+
     // SEARCH
     @GetMapping("/search")
     public ResponseEntity<?> search(
-            @RequestParam(required = false) String phone,
-            @RequestParam(required = false) String license) {
+            @RequestParam(value = "phone", required = false) String phone,
+            @RequestParam(value = "license", required = false) String license) {
 
-        if ((phone == null || phone.trim().isEmpty()) && 
+        if ((phone == null || phone.trim().isEmpty()) &&
             (license == null || license.trim().isEmpty())) {
             return ResponseEntity.badRequest()
                     .body("Please provide either phone or license number");
@@ -61,13 +80,12 @@ public class CustomerController {
 
         return service.search(phone, license)
                 .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(null));
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body(null));
     }
 
     // DELETE
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable Long id) {
+    public ResponseEntity<?> delete(@PathVariable("id") Long id) {
         try {
             if (service.findById(id).isEmpty()) {
                 return ResponseEntity.notFound().build();

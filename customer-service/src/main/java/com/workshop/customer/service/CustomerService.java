@@ -28,26 +28,44 @@ public class CustomerService {
 
     public Customer save(Customer customer) {
         // Basic validation
-        if (customer.getName() == null || customer.getName().trim().isEmpty()) {
-            throw new IllegalArgumentException("Customer name is required");
+        if (customer.getFirstName() == null || customer.getFirstName().trim().isEmpty()) {
+            throw new IllegalArgumentException("First name is required");
+        }
+        if (customer.getLastName() == null || customer.getLastName().trim().isEmpty()) {
+            throw new IllegalArgumentException("Last name is required");
         }
         if (customer.getPhone() == null || customer.getPhone().trim().isEmpty()) {
             throw new IllegalArgumentException("Customer phone is required");
         }
 
-        // Check for duplicate phone (when creating new or updating to different phone)
         if (customer.getId() == null) {
-            // New customer
+            // --- NEW CUSTOMER ---
+
+            // Auto-generate customerId: CUST-001, CUST-002, ...
+            int nextSuffix = repo.findMaxCustomerIdSuffix()
+                    .map(max -> max + 1)
+                    .orElse(1);
+            customer.setCustomerId(String.format("CUST-%03d", nextSuffix));
+
+            // Duplicate phone check
             if (repo.findByPhone(customer.getPhone()).isPresent()) {
                 throw new IllegalArgumentException("Phone number already exists");
             }
+
+            // Duplicate license check
             if (customer.getLicense() != null && !customer.getLicense().trim().isEmpty()) {
                 if (repo.findByLicense(customer.getLicense()).isPresent()) {
                     throw new IllegalArgumentException("License number already exists");
                 }
             }
         } else {
-            // Updating existing customer
+            // --- UPDATE EXISTING CUSTOMER ---
+
+            // Keep the existing customerId unchanged
+            repo.findById(customer.getId()).ifPresent(existing ->
+                customer.setCustomerId(existing.getCustomerId())
+            );
+
             Optional<Customer> existingByPhone = repo.findByPhone(customer.getPhone());
             if (existingByPhone.isPresent() && !existingByPhone.get().getId().equals(customer.getId())) {
                 throw new IllegalArgumentException("Phone number already exists");
@@ -68,11 +86,9 @@ public class CustomerService {
         if (phone != null && !phone.trim().isEmpty()) {
             return repo.findByPhone(phone.trim());
         }
-
         if (license != null && !license.trim().isEmpty()) {
             return repo.findByLicense(license.trim());
         }
-
         return Optional.empty();
     }
 
