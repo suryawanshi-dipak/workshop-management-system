@@ -1,6 +1,8 @@
 package com.workshop.planning.entity;
 
 import jakarta.persistence.*;
+
+import java.time.LocalDateTime;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -15,14 +17,32 @@ public class Planning {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "planning_number", unique = true, nullable = false)
     private String planningNumber;
+
+    @Column(name = "planning_date")
+    private LocalDateTime planningDate;
+
+    @Column(name = "customer_id")
+    private Long customerId;
+
+    @Column(name = "car_id")
+    private Long carId;
+
+    @Column(name = "service_type")
+    private String serviceType;
+
+    private Integer duration;
+
+    private String notes;
+
     private String license;
     private String customerName;
     private String customerNumber;
     private Integer carMileage;
     private String carMake;
 
-    private String status;
+    private String status = "DRAFT";
     private Long orderId;
 
     @OneToMany(mappedBy = "planning", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -110,4 +130,53 @@ public class Planning {
         this.lines = lines;
     }
 
+    public LocalDateTime getPlanningDate() {
+        return planningDate;
+    }
+
+    public void setPlanningDate(LocalDateTime planningDate) {
+        this.planningDate = planningDate;
+    }
+
+    public Long getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(Long customerId) {
+        this.customerId = customerId;
+    }
+
+    public Long getCarId() {
+        return carId;
+    }
+
+    public void setCarId(Long carId) {
+        this.carId = carId;
+    }
+
+    public String getServiceType() {
+        return serviceType;
+    }
+
+    public void setServiceType(String serviceType) {
+        this.serviceType = serviceType;
+    }
+
+    public Integer getDuration() {
+        return duration;
+    }
+
+    public void setDuration(Integer duration) {
+        this.duration = duration;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(String notes) {
+        this.notes = notes;
+    }
+
+    
 }

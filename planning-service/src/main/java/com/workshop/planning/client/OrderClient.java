@@ -7,9 +7,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import com.workshop.planning.dto.CreateOrderRequestDTO;
 import com.workshop.planning.dto.CreateOrderResponseDTO;
 
-@FeignClient(name = "ORDER-SERVICE")
+@FeignClient(name = "order-service")
 public interface OrderClient {
 
-    @PostMapping("api/orders/from-planning")
+    @PostMapping("/api/orders/from-planning")
     CreateOrderResponseDTO createOrder(@RequestBody CreateOrderRequestDTO requestDTO);
 }
