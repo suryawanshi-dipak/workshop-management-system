@@ -1,5 +1,8 @@
 package com.workshop.planning.service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -8,10 +11,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import com.workshop.planning.client.OrderClient;
-import com.workshop.planning.config.RestConfig;
 import com.workshop.planning.dto.CreateOrderRequestDTO;
 import com.workshop.planning.dto.CreateOrderResponseDTO;
 import com.workshop.planning.dto.OrderPartResuestDTO;
+import com.workshop.planning.dto.PlanningLineDTO;
+import com.workshop.planning.dto.PlanningRequestDTO;
 import com.workshop.planning.entity.Planning;
 import com.workshop.planning.entity.PlanningLine;
 import com.workshop.planning.repository.PlanningRepository;
@@ -31,19 +35,107 @@ public class PlanningService {
         this.orderClient = orderClient;
     }
 
-    public Planning createPlanning(Planning planning) {
-        if (planning.getLines() != null) {
-            for (PlanningLine line : planning.getLines()) {
-                line.setPlanning(planning);
-            }
-        }
-        planning.setStatus("DRAFT");
-        return planningRepository.save(planning);
+    public Planning createPlanning(PlanningRequestDTO dto) {
+        Planning p = new Planning();
+        p.setPlanningNumber(generateNumber());
+        apply(dto, p);
+        p.setStatus("DRAFT");
+        return planningRepository.save(p);
     }
 
+    private String generateNumber() {
+
+        String today = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
+        String prefix = "PLN-" + today + "-";
+        Long countToday = planningRepository.countByPlanningNumberStartingWith(prefix);
+        long next = countToday + 1;
+        return prefix + String.format("%03d", next);
+    }
+
+    // UPDATE
+    public Planning updatePlanning(Long id, PlanningRequestDTO dto) {
+        Planning p = getPlanning(id);
+        apply(dto, p);
+        return planningRepository.save(p);
+    }
+
+    // APPLY COMMON FIELDS
+    private void apply(PlanningRequestDTO dto, Planning p) {
+
+        if (dto.getPlanningDate() != null) {
+            p.setPlanningDate(dto.getPlanningDate());
+        } else if (dto.getDate() != null && dto.getTime() != null) {
+            p.setPlanningDate(LocalDateTime.parse(
+                dto.getDate() + "T" + dto.getTime() + ":00"
+            ));
+        }
+
+        p.setCustomerId(dto.getCustomerId());
+        p.setCarId(dto.getCarId());
+        p.setServiceType(dto.getServiceType());
+        p.setDuration(dto.getDuration());
+        p.setNotes(dto.getNotes());
+
+        if (dto.getLines() != null) {
+            List<PlanningLine> lines = new ArrayList<>();
+
+            for (PlanningLineDTO d : dto.getLines()) {
+                PlanningLine line = mapLine(d, p);
+                lines.add(line);
+            }
+
+            p.setLines(lines);
+        }
+    }
+
+    private PlanningLine mapLine(PlanningLineDTO d, Planning p) {
+        PlanningLine line = new PlanningLine();
+
+        line.setLineType("PART");
+        line.setItemCode(d.getItemCode());
+        line.setDescription(d.getDescription());
+        line.setQuantity(d.getQuantity());
+        line.setPrice(d.getPrice());
+        line.setPlanning(p);
+
+        return line;
+    }
+
+    // GET BY ID
     public Planning getPlanning(Long id) {
-        Planning p = planningRepository.getById(id);
-        return p;
+        return planningRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Planning not found"));
+    }
+
+    // GET ALL
+    public List<Planning> getAllPlannings() {
+        return planningRepository.findAll();
+    }
+
+    // GET BY DATE
+    public List<Planning> getByDate(String date) {
+        LocalDate localDate = LocalDate.parse(date);
+        return planningRepository.findByPlanningDateBetween(
+                localDate.atStartOfDay(),
+                localDate.plusDays(1).atStartOfDay()
+        );
+    }
+
+    // STATUS UPDATE
+    public Planning updateStatus(Long id, String status) {
+        Planning p = getPlanning(id);
+        p.setStatus(status);
+        return planningRepository.save(p);
+    }
+
+    // DELETE
+    public void deletePlanning(Long id) {
+        planningRepository.deleteById(id);
+    }
+
+    // COUNT
+    public Long count() {
+        return planningRepository.count();
     }
 
     @CircuitBreaker(name = "order-service", fallbackMethod = "orderFallback")
@@ -81,7 +173,8 @@ public class PlanningService {
         
         // Save order no in planning
         planning.setOrderId(response.getOrderId());
-        planning.setStatus("Order Created"); 
+        planning.setStatus("ORDER_CREATED");
+        planningRepository.save(planning);
 
         return CompletableFuture.completedFuture(response);
     }

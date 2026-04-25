@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { planningService, orderService } from '../services/api';
+import React, { useState, useEffect, useRef } from 'react';
+import { planningService, orderService, carService, customerService } from '../services/api';
 import { useToast } from '../components/Toast';
 
 const DAYS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
@@ -9,6 +9,23 @@ const TIME_SLOTS = ['08:00','08:30','09:00','09:30','10:00','10:30','11:00','11:
 const SERVICE_TYPES = ['Oil Change','Full Service','Brake Inspection','Tire Change','Engine Diagnostics','Air Conditioning','Transmission Service','Battery Replacement','Bodywork','Pre-MOT Check'];
 const PART_UNITS = ['pcs','ltr','set','kg','m'];
 const LINE_TYPES = ['Part', 'Activity'];
+
+// ── Mock data for fallback ────────────────────────────────────────────────────
+const MOCK_CARS = [
+  { id: 1, carId: 'CAR-001', make: 'BMW', model: '3 Series', year: 2019, licensePlate: 'AB-123-CD', color: 'Black', customerId: 'CUST-001' },
+  { id: 2, carId: 'CAR-002', make: 'Audi', model: 'A4', year: 2021, licensePlate: 'EF-456-GH', color: 'Silver', customerId: 'CUST-002' },
+  { id: 3, carId: 'CAR-003', make: 'Volkswagen', model: 'Golf', year: 2018, licensePlate: 'IJ-789-KL', color: 'White', customerId: 'CUST-003' },
+  { id: 4, carId: 'CAR-004', make: 'Ford', model: 'Focus', year: 2020, licensePlate: 'MN-012-OP', color: 'Blue', customerId: 'CUST-004' },
+  { id: 5, carId: 'CAR-005', make: 'Toyota', model: 'Corolla', year: 2022, licensePlate: 'QR-345-ST', color: 'Red', customerId: 'CUST-005' },
+];
+
+const MOCK_CUSTOMERS = [
+  { id: 1, customerId: 'CUST-001', firstName: 'Jan',    lastName: 'de Vries', phone: '+31612345678', city: 'Amsterdam' },
+  { id: 2, customerId: 'CUST-002', firstName: 'Anna',   lastName: 'Bakker',   phone: '+31623456789', city: 'Rotterdam' },
+  { id: 3, customerId: 'CUST-003', firstName: 'Pieter', lastName: 'Smit',     phone: '+31634567890', city: 'Utrecht'   },
+  { id: 4, customerId: 'CUST-004', firstName: 'Maria',  lastName: 'Jansen',   phone: '+31645678901', city: 'Den Haag'  },
+  { id: 5, customerId: 'CUST-005', firstName: 'Thomas', lastName: 'Visser',   phone: '+31656789012', city: 'Eindhoven' },
+];
 
 function getCalendarDays(year, month) {
   const firstDay = new Date(year, month, 1).getDay();
@@ -22,31 +39,20 @@ function getCalendarDays(year, month) {
 
 const uid = () => Date.now() + Math.random();
 const newLine = (type = 'Part') => ({
-  id: uid(),
-  type,
-  partNumber: '',
-  activityCode: '',
-  description: '',
-  quantity: '1',
-  unit: 'pcs',
-  unitPrice: '',
-  hours: '1',
-  hourlyRate: '',
+  id: uid(), type,
+  partNumber: '', activityCode: '', description: '',
+  quantity: '1', unit: 'pcs', unitPrice: '',
+  hours: '1', hourlyRate: '',
 });
 
-// Normalise whatever the backend returns into a flat array of plannings
 const normalisePlannings = (data) => {
   if (!data) return [];
   if (Array.isArray(data)) return data;
-  // Spring Page wrapper
   if (Array.isArray(data.content)) return data.content;
-  // single object accidentally returned
   if (typeof data === 'object') return [data];
   return [];
 };
 
-// Convert a backend planning's lines field into the unified frontend format.
-// Backend may send:  p.lines (unified) | p.partLines + p.activityLines (split) | nothing
 const extractLines = (p) => {
   if (Array.isArray(p.lines) && p.lines.length > 0) {
     return p.lines.map((l) => ({
@@ -62,12 +68,8 @@ const extractLines = (p) => {
       hourlyRate: String(l.price ?? l.hourlyRate ?? ''),
     }));
   }
-  const parts = (p.partLines || []).map((l) => ({
-    ...newLine('Part'), ...l, id: uid(), type: 'Part',
-  }));
-  const acts = (p.activityLines || []).map((l) => ({
-    ...newLine('Activity'), ...l, id: uid(), type: 'Activity',
-  }));
+  const parts = (p.partLines || []).map((l) => ({ ...newLine('Part'), ...l, id: uid(), type: 'Part' }));
+  const acts  = (p.activityLines || []).map((l) => ({ ...newLine('Activity'), ...l, id: uid(), type: 'Activity' }));
   return [...parts, ...acts];
 };
 
@@ -94,6 +96,106 @@ const EmptyState = ({ title, subtitle, action, onAction }) => (
   </div>
 );
 
+// ── License Plate Lookup field ────────────────────────────────────────────────
+function LicenseLookup({ allCars, allCustomers, onResolved, resolvedCar, resolvedCustomer, onClear }) {
+  const [plate, setPlate] = useState(resolvedCar?.licensePlate || '');
+  const [status, setStatus] = useState(resolvedCar ? 'found' : 'idle'); // idle | searching | found | notfound
+  const debounceRef = useRef(null);
+
+  const lookup = (value) => {
+    const normalised = value.toUpperCase().trim();
+    setPlate(normalised);
+    if (!normalised) { setStatus('idle'); onClear(); return; }
+
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setStatus('searching');
+      const car = allCars.find(c => (c.licensePlate || '').toUpperCase() === normalised);
+      if (!car) { setStatus('notfound'); onClear(); return; }
+      const customer = allCustomers.find(c => c.customerId === car.customerId) || null;
+      setStatus('found');
+      onResolved(car, customer);
+    }, 350);
+  };
+
+  useEffect(() => () => clearTimeout(debounceRef.current), []);
+
+  return (
+    <div className="form-group">
+      <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        License Plate
+        <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--gray-500)' }}>— auto-fills Customer &amp; Car</span>
+      </label>
+      <div style={{ position: 'relative' }}>
+        <input
+          className="form-input"
+          placeholder="AB-123-CD"
+          value={plate}
+          onChange={e => lookup(e.target.value)}
+          style={{
+            fontFamily: 'monospace', fontWeight: 600, letterSpacing: '0.06em',
+            paddingRight: 36,
+            borderColor: status === 'found' ? 'var(--success)' : status === 'notfound' ? 'var(--danger)' : undefined,
+          }}
+        />
+        <div style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center' }}>
+          {status === 'searching' && <span className="spinner" style={{ width: 14, height: 14 }} />}
+          {status === 'found'     && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>}
+          {status === 'notfound'  && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>}
+        </div>
+      </div>
+      {status === 'notfound' && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 4 }}>No car found with this license plate.</p>}
+    </div>
+  );
+}
+
+// ── Resolved vehicle + customer card ─────────────────────────────────────────
+function ResolvedCard({ car, customer }) {
+  if (!car) return null;
+  const makeColors = { BMW: '#1c69d4', Audi: '#bb0a30', Volkswagen: '#001e50', Ford: '#003380', Toyota: '#eb0a1e' };
+  const badgeBg = makeColors[car.make] || 'var(--navy)';
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+      {/* Car card */}
+      <div style={{ padding: '10px 12px', borderRadius: 8, background: 'var(--gray-50)', border: '1.5px solid var(--gray-200)', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ width: 34, height: 34, borderRadius: 7, background: badgeBg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 9, fontWeight: 700, flexShrink: 0, letterSpacing: '0.04em' }}>
+          {car.make?.slice(0,3).toUpperCase()}
+        </div>
+        <div>
+          <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--gray-900)' }}>{car.make} {car.model}</div>
+          <div style={{ fontSize: 11, color: 'var(--gray-500)', marginTop: 1 }}>
+            {car.year && <span>{car.year} · </span>}
+            <span style={{ fontFamily: 'monospace' }}>{car.carId}</span>
+          </div>
+          {car.color && <div style={{ fontSize: 11, color: 'var(--gray-400)' }}>{car.color}</div>}
+        </div>
+      </div>
+
+      {/* Customer card */}
+      {customer ? (
+        <div style={{ padding: '10px 12px', borderRadius: 8, background: 'var(--gray-50)', border: '1.5px solid var(--gray-200)', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--navy)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 600, flexShrink: 0 }}>
+            {`${customer.firstName?.[0] || ''}${customer.lastName?.[0] || ''}`.toUpperCase()}
+          </div>
+          <div>
+            <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--gray-900)' }}>{customer.firstName} {customer.lastName}</div>
+            <div style={{ fontSize: 11, color: 'var(--gray-500)', marginTop: 1 }}>
+              <span style={{ fontFamily: 'monospace' }}>{customer.customerId}</span>
+            </div>
+            {customer.phone && <div style={{ fontSize: 11, color: 'var(--gray-400)' }}>{customer.phone}</div>}
+          </div>
+        </div>
+      ) : (
+        <div style={{ padding: '10px 12px', borderRadius: 8, background: 'var(--warning-bg)', border: '1.5px solid #ffe0b2', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span style={{ fontSize: 12, color: 'var(--warning)' }}>No linked customer found</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Planning() {
   const { addToast } = useToast();
   const today = new Date();
@@ -101,18 +203,25 @@ export default function Planning() {
   const [viewMonth, setViewMonth]   = useState(today.getMonth());
   const [selectedDate, setSelectedDate] = useState(today.getDate());
   const [plannings, setPlannings]   = useState([]);
+  const [allCars, setAllCars]       = useState([]);
+  const [allCustomers, setAllCustomers] = useState([]);
   const [showModal, setShowModal]   = useState(false);
   const [editItem, setEditItem]     = useState(null);
   const [saving, setSaving]         = useState(false);
+
+  // resolved from license plate lookup
+  const [resolvedCar, setResolvedCar]           = useState(null);
+  const [resolvedCustomer, setResolvedCustomer] = useState(null);
+
   const [form, setForm] = useState({
-    customerId: '', carId: '', serviceType: '',
-    notes: '', duration: '60', createOrder: false, time: '',
+    serviceType: '', notes: '', duration: '60', createOrder: false, time: '',
   });
   const [lines, setLines] = useState([newLine('Part')]);
 
   const days = getCalendarDays(viewYear, viewMonth);
 
   useEffect(() => { fetchPlannings(); }, [viewYear, viewMonth]); // eslint-disable-line
+  useEffect(() => { fetchAllCars(); fetchAllCustomers(); }, []);
 
   const fetchPlannings = async () => {
     try {
@@ -122,6 +231,20 @@ export default function Planning() {
       console.error('fetchPlannings error:', e);
       setPlannings([]);
     }
+  };
+
+  const fetchAllCars = async () => {
+    try {
+      const res = await carService.getAll();
+      setAllCars(Array.isArray(res.data) && res.data.length ? res.data : MOCK_CARS);
+    } catch { setAllCars(MOCK_CARS); }
+  };
+
+  const fetchAllCustomers = async () => {
+    try {
+      const res = await customerService.getAll();
+      setAllCustomers(Array.isArray(res.data) && res.data.length ? res.data : MOCK_CUSTOMERS);
+    } catch { setAllCustomers(MOCK_CUSTOMERS); }
   };
 
   const hasPlanningOn = (day) => {
@@ -148,23 +271,31 @@ export default function Planning() {
   const openNew = () => {
     if (!selectedDate) { addToast('Please select a date first.', 'error'); return; }
     setEditItem(null);
-    setForm({ customerId: '', carId: '', serviceType: '', notes: '', duration: '60', createOrder: false, time: '' });
+    setResolvedCar(null);
+    setResolvedCustomer(null);
+    setForm({ serviceType: '', notes: '', duration: '60', createOrder: false, time: '' });
     setLines([newLine('Part')]);
     setShowModal(true);
   };
 
   const openEdit = (p) => {
     setEditItem(p);
+    setResolvedCar(null);
+    setResolvedCustomer(null);
+    // Try to pre-resolve car/customer from existing planning data
+    if (p.carId) {
+      const car = allCars.find(c => c.carId === p.carId) || null;
+      const customer = car ? allCustomers.find(c => c.customerId === car.customerId) || null : null;
+      setResolvedCar(car);
+      setResolvedCustomer(customer);
+    }
     setForm({
-      customerId:  p.customerId  || '',
-      carId:       p.carId       || '',
       serviceType: p.serviceType || '',
       notes:       p.notes       || '',
       duration:    p.duration    || '60',
       createOrder: false,
       time:        p.time || p.planningDate?.slice(11, 16) || '',
     });
-    // FIX: use extractLines() so both p.lines and p.partLines/p.activityLines are handled
     const extracted = extractLines(p);
     setLines(extracted.length ? extracted : [newLine('Part')]);
     setShowModal(true);
@@ -177,7 +308,6 @@ export default function Planning() {
       addToast('Planning deleted.', 'success');
       fetchPlannings();
     } catch (e) {
-      console.error('handleDelete error:', e);
       addToast('Delete failed: ' + (e?.response?.data?.message || e?.message || 'unknown error'), 'error');
     }
   };
@@ -188,15 +318,12 @@ export default function Planning() {
     setSaving(true);
     try {
       const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(selectedDate).padStart(2, '0')}`;
-
-      // FIX: payload object is kept on one contiguous block — no stray blank lines
-      // that could confuse older bundlers / cause silent module-evaluation failures.
       const payload = {
         planningDate: `${dateStr}T${form.time}:00`,
         date: dateStr,
         time: form.time,
-        customerId: form.customerId,
-        carId: form.carId,
+        customerId: resolvedCustomer?.customerId || resolvedCar?.customerId || '',
+        carId: resolvedCar?.carId || '',
         serviceType: form.serviceType,
         duration: form.duration,
         notes: form.notes,
@@ -228,7 +355,6 @@ export default function Planning() {
       fetchPlannings();
     } catch (e) {
       console.error('handleSave error:', e);
-      // FIX: show the actual server message if available, not a generic string
       const msg = e?.response?.data?.message || e?.message || 'Unknown error';
       addToast('Save failed: ' + msg, 'error');
     } finally {
@@ -367,16 +493,25 @@ export default function Planning() {
 
             <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
 
-              {/* Header fields */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 12 }}>
-                <div className="form-group">
-                  <label className="form-label">Customer ID</label>
-                  <input className="form-input" placeholder="CUST-001" value={form.customerId} onChange={(e) => setForm((f) => ({ ...f, customerId: e.target.value }))} />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Car ID</label>
-                  <input className="form-input" placeholder="CAR-001" value={form.carId} onChange={(e) => setForm((f) => ({ ...f, carId: e.target.value }))} />
-                </div>
+              {/* ── License plate lookup ── */}
+              <div style={{ padding: '14px 16px', background: 'rgba(13,43,92,0.03)', border: '1px solid var(--gray-200)', borderRadius: 10 }}>
+                <LicenseLookup
+                  allCars={allCars}
+                  allCustomers={allCustomers}
+                  resolvedCar={resolvedCar}
+                  resolvedCustomer={resolvedCustomer}
+                  onResolved={(car, customer) => { setResolvedCar(car); setResolvedCustomer(customer); }}
+                  onClear={() => { setResolvedCar(null); setResolvedCustomer(null); }}
+                />
+                {resolvedCar && (
+                  <div style={{ marginTop: 12 }}>
+                    <ResolvedCard car={resolvedCar} customer={resolvedCustomer} />
+                  </div>
+                )}
+              </div>
+
+              {/* ── Service type + duration ── */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div className="form-group">
                   <label className="form-label">Service Type *</label>
                   <select className="form-input" value={form.serviceType} onChange={(e) => setForm((f) => ({ ...f, serviceType: e.target.value }))}>
@@ -434,13 +569,11 @@ export default function Planning() {
                   </button>
                 </div>
                 <div style={{ border: '1px solid var(--gray-200)', borderRadius: 8, overflow: 'hidden' }}>
-                  {/* Header row */}
                   <div style={{ display: 'grid', gridTemplateColumns: '74px 92px 1fr 58px 64px 80px 28px', background: 'var(--gray-50)', borderBottom: '1px solid var(--gray-200)', padding: '6px 10px', gap: 6 }}>
                     {['Type', 'Code / No.', 'Description', 'Qty / Hrs', 'Unit', 'Price / Rate', ''].map((h) => (
                       <div key={h} style={{ fontSize: 10, fontWeight: 600, color: 'var(--gray-500)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{h}</div>
                     ))}
                   </div>
-                  {/* Data rows */}
                   {lines.map((l, idx) => (
                     <div
                       key={l.id}
@@ -510,7 +643,7 @@ export default function Planning() {
                 />
               </div>
 
-              {/* Create Order toggle — new plannings only */}
+              {/* Create Order toggle */}
               {!editItem && (
                 <label style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: form.createOrder ? 'rgba(13,43,92,0.05)' : 'var(--gray-50)', border: `1.5px solid ${form.createOrder ? 'var(--navy)' : 'var(--gray-200)'}`, borderRadius: 8, cursor: 'pointer', transition: 'all 0.15s', userSelect: 'none' }}>
                   <input

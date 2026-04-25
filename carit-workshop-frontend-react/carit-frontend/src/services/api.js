@@ -1,5 +1,8 @@
 import axios from 'axios';
 
+// ── Single gateway base URL ───────────────────────────────────────────────────
+// All requests go through the same host (your API gateway / reverse proxy).
+// Change BASE_URL here once and every service picks it up automatically.
 const BASE_URL = 'http://localhost:8080';
 
 const api = axios.create({
@@ -10,15 +13,12 @@ const api = axios.create({
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    // Log the full error so the real message is always visible in the browser console
     console.error('API Error:', err?.response?.status, err?.response?.data || err.message);
     return Promise.reject(err);
   }
 );
 
-// ── Planning Service ─────────────────────────────────────────────────────────
-// All routes go through /api/plannings to match the backend controller.
-// (Previously some routes used /planning-service/plannings which caused 404s.)
+// ── Planning Service ──────────────────────────────────────────────────────────
 export const planningService = {
   getAll:    ()           => api.get('/api/plannings'),
   getById:   (id)         => api.get('/api/plannings/getPlanning', { params: { Planning_ID: id } }),
@@ -28,34 +28,41 @@ export const planningService = {
   getByDate: (date)       => api.get(`/api/plannings/date/${date}`),
 };
 
-// ── Order Service ────────────────────────────────────────────────────────────
+// ── Order Service ─────────────────────────────────────────────────────────────
+// Previously Orders.jsx called http://localhost:8082/api/orders directly via
+// raw fetch() with its own inline helper — now unified here via axios so
+// error handling, base URL and auth headers are consistent across all services.
 export const orderService = {
-  getAll:       ()              => api.get('/order-service/orders'),
-  getById:      (id)            => api.get(`/order-service/orders/${id}`),
-  create:       (data)          => api.post('/order-service/orders', data),
-  update:       (id, data)      => api.put(`/order-service/orders/${id}`, data),
-  updateStatus: (id, status)    => api.patch(`/order-service/orders/${id}/status`, { status }),
-  delete:       (id)            => api.delete(`/order-service/orders/${id}`),
+  getAll:       ()           => api.get('/api/orders'),
+  getById:      (id)         => api.get(`/api/orders/${id}`),
+  getNewNumber: ()           => api.get('/api/orders/new'),        // NEW: was called inline in Orders.jsx
+  create:       (data)       => api.post('/api/orders', data),
+  update:       (id, data)   => api.put(`/api/orders/${id}`, data),
+  updateStatus: (id, status) => api.patch(`/api/orders/${id}/status`, { status }),
+  delete:       (id)         => api.delete(`/api/orders/${id}`),
 };
 
-// ── Customer Service ─────────────────────────────────────────────────────────
+// ── Customer Service ──────────────────────────────────────────────────────────
+// Previously Customers.jsx called http://localhost:8083/api/customers directly
+// via its own inline apiFetch helper — now unified here.
 export const customerService = {
-  getAll:    ()           => api.get('/customer-service/customers'),
-  getById:   (id)         => api.get(`/customer-service/customers/${id}`),
-  create:    (data)       => api.post('/customer-service/customers', data),
-  update:    (id, data)   => api.put(`/customer-service/customers/${id}`, data),
-  delete:    (id)         => api.delete(`/customer-service/customers/${id}`),
-  search:    (query)      => api.get(`/customer-service/customers/search?q=${query}`),
+  getAll:    ()           => api.get('/api/customers'),
+  getById:   (id)         => api.get(`/api/customers/${id}`),
+  create:    (data)       => api.post('/api/customers', data),
+  update:    (id, data)   => api.put(`/api/customers/${id}`, data),
+  delete:    (id)         => api.delete(`/api/customers/${id}`),
+  search:    (query)      => api.get(`/api/customers/search?q=${query}`),
 };
 
-// ── Car Service ──────────────────────────────────────────────────────────────
+// ── Car Service ───────────────────────────────────────────────────────────────
 export const carService = {
-  getAll:         ()            => api.get('/car-service/cars'),
-  getById:        (id)          => api.get(`/car-service/cars/${id}`),
-  create:         (data)        => api.post('/car-service/cars', data),
-  update:         (id, data)    => api.put(`/car-service/cars/${id}`, data),
-  delete:         (id)          => api.delete(`/car-service/cars/${id}`),
-  getByCustomer:  (customerId)  => api.get(`/car-service/cars/customer/${customerId}`),
+  getAll:        ()           => api.get('/api/vehicles'),
+  getById:       (id)         => api.get(`/api/vehicles/${id}`),
+  getByPlate:    (plate)      => api.get(`/api/vehicles/plate/${encodeURIComponent(plate)}`),  // NEW: lookup by license plate on backend if available
+  create:        (data)       => api.post('/api/vehicles', data),
+  update:        (id, data)   => api.put(`/api/vehicles/${id}`, data),
+  delete:        (id)         => api.delete(`/api/vehicles/${id}`),
+  getByCustomer: (customerId) => api.get(`api/vehicles/customer/${customerId}`),
 };
 
 export default api;

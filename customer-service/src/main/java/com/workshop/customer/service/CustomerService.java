@@ -5,6 +5,7 @@ import com.workshop.customer.repository.CustomerRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -52,12 +53,6 @@ public class CustomerService {
                 throw new IllegalArgumentException("Phone number already exists");
             }
 
-            // Duplicate license check
-            if (customer.getLicense() != null && !customer.getLicense().trim().isEmpty()) {
-                if (repo.findByLicense(customer.getLicense()).isPresent()) {
-                    throw new IllegalArgumentException("License number already exists");
-                }
-            }
         } else {
             // --- UPDATE EXISTING CUSTOMER ---
 
@@ -71,28 +66,31 @@ public class CustomerService {
                 throw new IllegalArgumentException("Phone number already exists");
             }
 
-            if (customer.getLicense() != null && !customer.getLicense().trim().isEmpty()) {
-                Optional<Customer> existingByLicense = repo.findByLicense(customer.getLicense());
-                if (existingByLicense.isPresent() && !existingByLicense.get().getId().equals(customer.getId())) {
-                    throw new IllegalArgumentException("License number already exists");
-                }
-            }
         }
 
         return repo.save(customer);
     }
 
-    public Optional<Customer> search(String phone, String license) {
-        if (phone != null && !phone.trim().isEmpty()) {
-            return repo.findByPhone(phone.trim());
-        }
-        if (license != null && !license.trim().isEmpty()) {
-            return repo.findByLicense(license.trim());
-        }
-        return Optional.empty();
+    public List<Customer> search(String q) {
+
+        List<Customer> result = new ArrayList<>();
+
+        result.addAll(repo.findByFirstNameContainingIgnoreCase(q));
+        result.addAll(repo.findByLastNameContainingIgnoreCase(q));
+        result.addAll(repo.findByCityContainingIgnoreCase(q));
+        result.addAll(repo.findByEmailContainingIgnoreCase(q));
+
+        repo.findByPhone(q).ifPresent(result::add);
+        repo.findByCustomerId(q).ifPresent(result::add);
+
+        return result.stream().distinct().toList();
     }
 
     public void delete(Long id) {
         repo.deleteById(id);
+    }
+
+    public Long count() {
+        return repo.count();
     }
 }

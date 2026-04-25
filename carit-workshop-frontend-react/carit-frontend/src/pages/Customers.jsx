@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from '../components/Toast';
 
-const API_BASE = 'http://localhost:8083/api/customers';
+const API_BASE = 'http://localhost:8080/api/customers';
 
 const MOCK = [
   { id: 1, customerId: 'CUST-001', firstName: 'Jan',    lastName: 'de Vries', email: 'jan.devries@email.com', phone: '+31612345678', city: 'Amsterdam', createdAt: '2023-06-10' },
@@ -50,7 +50,7 @@ function Avatar({ name }) {
   );
 }
 
-const EMPTY_FORM = { firstName: '', lastName: '', email: '', phone: '', city: '', address: '', license: '' };
+const EMPTY_FORM = { firstName: '', lastName: '', email: '', phone: '', city: '', address: ''};
 
 export default function Customers() {
   const { addToast } = useToast();
@@ -84,7 +84,6 @@ export default function Customers() {
       firstName: c.firstName || '', lastName:  c.lastName  || '',
       email:     c.email     || '', phone:     c.phone     || '',
       city:      c.city      || '', address:   c.address   || '',
-      license:   c.license   || '',
     });
     setShowModal(true);
   };
@@ -232,10 +231,6 @@ export default function Customers() {
                 <div className="form-group">
                   <label className="form-label">Phone *</label>
                   <input className="form-input" value={form.phone} onChange={setField('phone')} />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">License No.</label>
-                  <input className="form-input" value={form.license} onChange={setField('license')} />
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>

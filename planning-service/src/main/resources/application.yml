@@ -33,6 +33,12 @@ management:
     web:
       exposure:
         include: "*"
+  tracing:
+    sampling:
+      probability: 1.0   # capture all requests (for learning)
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans
         
 resilience4j:
   circuitbreaker:
@@ -46,3 +52,10 @@ resilience4j:
     instances:
       orderService:
         timeoutDuration: 2s
+
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 2000   # 2 seconds to establish connection
+        readTimeout: 2000      # 2 seconds to wait for response

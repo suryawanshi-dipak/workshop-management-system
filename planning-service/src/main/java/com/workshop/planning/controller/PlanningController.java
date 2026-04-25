@@ -34,16 +34,38 @@ public class PlanningController {
         return plannings;
     }
 
+    @GetMapping("/date/{date}")
+    public List<Planning> getByDate(@PathVariable String date) {
+        return planningService.getByDate(date);
+    }
+
+    @GetMapping("/count")
+    public Long count() {
+        return planningService.count();
+    }
+
     @PostMapping
     public Planning createPlanning(@RequestBody PlanningRequestDTO planningRequestDTO) {
-System.out.println(planningRequestDTO);        
+        System.out.println(planningRequestDTO);        
         return planningService.createPlanning(planningRequestDTO);
-    }
+    }    
 
     @PostMapping("/{id}/create-order")
     public CompletableFuture<CreateOrderResponseDTO> createOrder(@PathVariable("id") Long id) {
         System.out.println("/{id}/create-order called");        
         return planningService.createOrderFromPlanning(id);
+    }
+
+    @PutMapping("/{id}")
+    public Planning update(@PathVariable Long id,
+                           @RequestBody PlanningRequestDTO dto) {
+        return planningService.updatePlanning(id, dto);
+    }
+
+    @PatchMapping("/{id}/status")
+    public Planning updateStatus(@PathVariable Long id,
+                                 @RequestParam String status) {
+        return planningService.updateStatus(id, status);
     }
 
     @DeleteMapping("/{id}")

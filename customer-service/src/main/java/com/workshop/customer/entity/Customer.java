@@ -23,9 +23,6 @@ public class Customer {
     @Column(nullable = false, unique = true, length = 20)
     private String phone;
 
-    @Column(unique = true, length = 50)
-    private String license;
-
     @Column(length = 150)
     private String email;
 
@@ -58,9 +55,6 @@ public class Customer {
 
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
-
-    public String getLicense() { return license; }
-    public void setLicense(String license) { this.license = license; }
 
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }

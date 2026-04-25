@@ -24,10 +24,10 @@ public class Planning {
     private LocalDateTime planningDate;
 
     @Column(name = "customer_id")
-    private Long customerId;
+    private String customerId;
 
     @Column(name = "car_id")
-    private Long carId;
+    private String carId;
 
     @Column(name = "service_type")
     private String serviceType;
@@ -138,19 +138,19 @@ public class Planning {
         this.planningDate = planningDate;
     }
 
-    public Long getCustomerId() {
+    public String getCustomerId() {
         return customerId;
     }
 
-    public void setCustomerId(Long customerId) {
+    public void setCustomerId(String customerId) {
         this.customerId = customerId;
     }
 
-    public Long getCarId() {
+    public String getCarId() {
         return carId;
     }
 
-    public void setCarId(Long carId) {
+    public void setCarId(String carId) {
         this.carId = carId;
     }
 

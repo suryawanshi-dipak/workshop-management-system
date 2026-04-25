@@ -9,8 +9,8 @@ public class PlanningRequestDTO {
     private String date;
     private String time;
 
-    private Long customerId;
-    private Long carId;
+    private String customerId;
+    private String carId;
 
     private String serviceType;
     private Integer duration;
@@ -35,16 +35,16 @@ public class PlanningRequestDTO {
     public void setTime(String time) {
         this.time = time;
     }
-    public Long getCustomerId() {
+    public String getCustomerId() {
         return customerId;
     }
-    public void setCustomerId(Long customerId) {
+    public void setCustomerId(String customerId) {
         this.customerId = customerId;
     }
-    public Long getCarId() {
+    public String getCarId() {
         return carId;
     }
-    public void setCarId(Long carId) {
+    public void setCarId(String carId) {
         this.carId = carId;
     }
     public String getServiceType() {

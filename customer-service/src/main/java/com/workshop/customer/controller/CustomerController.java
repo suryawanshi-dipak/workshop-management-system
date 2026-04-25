@@ -10,7 +10,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/customers")
-@CrossOrigin(origins = "*")
 public class CustomerController {
 
     private final CustomerService service;
@@ -68,19 +67,14 @@ public class CustomerController {
 
     // SEARCH
     @GetMapping("/search")
-    public ResponseEntity<?> search(
-            @RequestParam(value = "phone", required = false) String phone,
-            @RequestParam(value = "license", required = false) String license) {
+    public ResponseEntity<List<Customer>> search(@RequestParam String q){
+        return ResponseEntity.ok(service.search(q));
+    }
 
-        if ((phone == null || phone.trim().isEmpty()) &&
-            (license == null || license.trim().isEmpty())) {
-            return ResponseEntity.badRequest()
-                    .body("Please provide either phone or license number");
-        }
-
-        return service.search(phone, license)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body(null));
+    // COUNT
+    @GetMapping("/count")
+    public ResponseEntity<Long> count() {
+        return ResponseEntity.ok(service.count());
     }
 
     // DELETE
