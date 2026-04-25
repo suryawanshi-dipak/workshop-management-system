@@ -4,4 +4,18 @@ dist/
 .env
 .env.local
 coverage/
+
+# Maven
+target/
+
+# Logs
+*.log
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS files
 .DS_Store
+Thumbs.db

@@ -1,0 +1,6 @@
+.env
+.env.local
+coverage/
+.DS_Store
+.vscode/
+target/
