@@ -90,33 +90,32 @@ export default function Layout({ children }) {
         }}>
           {/* Logo mark */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 0, flexShrink: 0 }}>
-            <div style={{
-              background: 'var(--navy)',
-              border: '2px solid rgba(255,255,255,0.2)',
-              borderRadius: 6,
-              padding: '4px 8px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 0,
-            }}>
-              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 20, color: 'white', letterSpacing: '-0.5px' }}>Car</span>
-              <span style={{
-                display: 'inline-block',
-                width: 10,
-                height: 10,
-                background: 'var(--amber)',
-                borderRadius: 2,
-                margin: '0 1px',
-                transform: 'translateY(-3px)',
-              }}/>
-              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 20, color: 'var(--rust)', letterSpacing: '-0.5px' }}>T</span>
+            <div style={{ overflow: 'hidden' }}>
+              <div style={{
+                fontFamily: 'var(--font-display)',
+                fontWeight: 800,
+                fontSize: 22,
+                letterSpacing: '-0.6px',
+                color: 'white',
+                lineHeight: 1
+              }}>
+                Car<span style={{ color: 'var(--amber)' }}>IT</span>
+              </div>
+
+              {!collapsed && (
+                <div style={{
+                  color: 'rgba(255,255,255,0.55)',
+                  fontSize: 11,
+                  fontWeight: 500,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  marginTop: 4
+                }}>
+                  Management System
+                </div>
+              )}
             </div>
           </div>
-          {!collapsed && (
-            <div style={{ overflow: 'hidden' }}>
-              <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Audev</div>
-            </div>
-          )}
         </div>
 
         {/* Nav */}
