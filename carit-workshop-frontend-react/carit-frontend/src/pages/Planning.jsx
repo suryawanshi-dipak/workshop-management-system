@@ -318,25 +318,56 @@ export default function Planning() {
     setSaving(true);
     try {
       const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(selectedDate).padStart(2, '0')}`;
+
+      // ── Split lines into parts + activities for the backend ──
+      const partLines     = lines.filter(l => l.type === 'Part'     && l.description);
+      const activityLines = lines.filter(l => l.type === 'Activity' && l.description);
+
       const payload = {
         planningDate: `${dateStr}T${form.time}:00`,
-        date: dateStr,
-        time: form.time,
-        customerId: resolvedCustomer?.customerId || resolvedCar?.customerId || '',
-        carId: resolvedCar?.carId || '',
-        serviceType: form.serviceType,
-        duration: form.duration,
-        notes: form.notes,
-        lines: lines
-          .filter((l) => l.description)
-          .map((l, index) => ({
-            id: index + 1,
-            lineType:    l.type === 'Part' ? 'PART' : 'ACTIVITY',
-            itemCode:    l.type === 'Part' ? l.partNumber : l.activityCode,
-            description: l.description,
-            quantity:    Number(l.type === 'Part' ? l.quantity   : l.hours),
-            price:       Number(l.type === 'Part' ? l.unitPrice  : l.hourlyRate),
-          })),
+        date:         dateStr,
+        time:         form.time,
+        customerId:   resolvedCustomer?.customerId || resolvedCar?.customerId || '',
+        carId:        resolvedCar?.carId           || '',
+        serviceType:  form.serviceType,
+        duration:     form.duration,
+        notes:        form.notes,
+      };
+
+      // ── Order-specific payload with correct field names ──
+      const orderPayload = {
+        planningId:     null,                          // no planning ID yet
+        license:        resolvedCar?.licensePlate      || '',
+        customerName:   resolvedCustomer
+                          ? `${resolvedCustomer.firstName} ${resolvedCustomer.lastName}`
+                          : '',
+        customerNumber: resolvedCustomer?.customerId   || '',
+        carMileage:     null,
+        carMake:        resolvedCar
+                          ? `${resolvedCar.make} ${resolvedCar.model}`
+                          : '',
+        customerId:     resolvedCustomer?.customerId   || resolvedCar?.customerId || '',
+        carId:          resolvedCar?.carId             || '',
+        serviceType:    form.serviceType,
+        status:         'Scheduled',
+        notes:          form.notes,
+
+        // ✅ Matches CreateOrderRequest.parts — List<OrderPartRequest>
+        parts: partLines.map(l => ({
+          partNo:      l.partNumber,
+          description: l.description,
+          quantity:    Number(l.quantity) || 1,
+          unit:        l.unit            || 'pcs',
+          unitPrice:   l.unitPrice ? Number(l.unitPrice) : null,
+        })),
+
+        // ✅ Matches CreateOrderRequest.activities — List<OrderActivityRequest>
+        activities: activityLines.map(l => ({
+          activityCode: l.activityCode,
+          description:  l.description,
+          hours:        String(l.hours      || '1'),
+          hourlyRate:   String(l.hourlyRate || ''),
+        })),
       };
 
       if (editItem) {
@@ -344,13 +375,14 @@ export default function Planning() {
         addToast('Planning updated!', 'success');
       } else {
         await planningService.create(payload);
+        addToast('Planning created!', 'success');
+
         if (form.createOrder) {
-          await orderService.create({ ...payload, status: 'Scheduled' });
+          await orderService.createFromPlanning(orderPayload);   // ✅ now sends correct shape
           addToast('Planning + Order created!', 'success');
-        } else {
-          addToast('Planning created!', 'success');
         }
       }
+
       setShowModal(false);
       fetchPlannings();
     } catch (e) {

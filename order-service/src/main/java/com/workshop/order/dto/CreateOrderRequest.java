@@ -3,85 +3,74 @@ package com.workshop.order.dto;
 import java.util.List;
 
 public class CreateOrderRequest {
-    private Long planningId;
 
-    private String license;
-    private String customerName;
-    private String customerNumber;
+    // ── Planning-flow fields ──────────────────────────────────────────────────
+    private Long    planningId;
+    private String  license;
+    private String  customerName;
+    private String  customerNumber;
     private Integer carMileage;
-    private String carMake;
+    private String  carMake;
 
-    private List<OrderPartRequest> parts;
+    // ── React frontend fields ─────────────────────────────────────────────────
+    private String customerId;
+    private String carId;
+    private String serviceType;
+    private String status;       // defaults to "Pending" in DB, optional here
+    private String notes;
+    private String price;
+    private String createdAt;
 
-    public CreateOrderRequest() {
-    }
+    // ── Line items ────────────────────────────────────────────────────────────
+    private List<OrderPartRequest>     parts;
+    private List<OrderActivityRequest> activities;
 
-    public CreateOrderRequest(Long planningId, String license, String customerName, String customerNumber,
-            Integer carMileage, String carMake, List<OrderPartRequest> parts) {
-        this.planningId = planningId;
-        this.license = license;
-        this.customerName = customerName;
-        this.customerNumber = customerNumber;
-        this.carMileage = carMileage;
-        this.carMake = carMake;
-        this.parts = parts;
-    }
+    public CreateOrderRequest() {}
 
-    public Long getPlanningId() {
-        return planningId;
-    }
+    // ── Getters & Setters ─────────────────────────────────────────────────────
 
-    public void setPlanningId(Long planningId) {
-        this.planningId = planningId;
-    }
+    public Long getPlanningId() { return planningId; }
+    public void setPlanningId(Long planningId) { this.planningId = planningId; }
 
-    public String getLicense() {
-        return license;
-    }
+    public String getLicense() { return license; }
+    public void setLicense(String license) { this.license = license; }
 
-    public void setLicense(String license) {
-        this.license = license;
-    }
+    public String getCustomerName() { return customerName; }
+    public void setCustomerName(String customerName) { this.customerName = customerName; }
 
-    public String getCustomerName() {
-        return customerName;
-    }
+    public String getCustomerNumber() { return customerNumber; }
+    public void setCustomerNumber(String customerNumber) { this.customerNumber = customerNumber; }
 
-    public void setCustomerName(String customerName) {
-        this.customerName = customerName;
-    }
+    public Integer getCarMileage() { return carMileage; }
+    public void setCarMileage(Integer carMileage) { this.carMileage = carMileage; }
 
-    public String getCustomerNumber() {
-        return customerNumber;
-    }
+    public String getCarMake() { return carMake; }
+    public void setCarMake(String carMake) { this.carMake = carMake; }
 
-    public void setCustomerNumber(String customerNumber) {
-        this.customerNumber = customerNumber;
-    }
+    public String getCustomerId() { return customerId; }
+    public void setCustomerId(String customerId) { this.customerId = customerId; }
 
-    public Integer getCarMileage() {
-        return carMileage;
-    }
+    public String getCarId() { return carId; }
+    public void setCarId(String carId) { this.carId = carId; }
 
-    public void setCarMileage(Integer carMileage) {
-        this.carMileage = carMileage;
-    }
+    public String getServiceType() { return serviceType; }
+    public void setServiceType(String serviceType) { this.serviceType = serviceType; }
 
-    public String getCarMake() {
-        return carMake;
-    }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 
-    public void setCarMake(String carMake) {
-        this.carMake = carMake;
-    }
+    public String getNotes() { return notes; }
+    public void setNotes(String notes) { this.notes = notes; }
 
-    public List<OrderPartRequest> getParts() {
-        return parts;
-    }
+    public String getPrice() { return price; }
+    public void setPrice(String price) { this.price = price; }
 
-    public void setParts(List<OrderPartRequest> parts) {
-        this.parts = parts;
-    }   
-    
-    
+    public String getCreatedAt() { return createdAt; }
+    public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
+
+    public List<OrderPartRequest> getParts() { return parts; }
+    public void setParts(List<OrderPartRequest> parts) { this.parts = parts; }
+
+    public List<OrderActivityRequest> getActivities() { return activities; }
+    public void setActivities(List<OrderActivityRequest> activities) { this.activities = activities; }
 }

@@ -33,13 +33,15 @@ export const planningService = {
 // raw fetch() with its own inline helper — now unified here via axios so
 // error handling, base URL and auth headers are consistent across all services.
 export const orderService = {
-  getAll:       ()           => api.get('/api/orders'),
-  getById:      (id)         => api.get(`/api/orders/${id}`),
-  getNewNumber: ()           => api.get('/api/orders/new'),        // NEW: was called inline in Orders.jsx
+  getAll:          ()           => api.get('/api/orders'),
+  getById:         (id)         => api.get(`/api/orders/${id}`),
+  getNewNumber:    ()           => api.get('/api/orders/new'),
   create:       (data)       => api.post('/api/orders', data),
-  update:       (id, data)   => api.put(`/api/orders/${id}`, data),
-  updateStatus: (id, status) => api.patch(`/api/orders/${id}/status`, { status }),
-  delete:       (id)         => api.delete(`/api/orders/${id}`),
+  createFromPlanning: (data)    => api.post('/api/orders/from-planning', data), // ✅ renamed for clarity
+  save:            (data)       => api.post('/api/orders', data),               // for direct Order entity saves if needed
+  update:          (id, data)   => api.put(`/api/orders/${id}`, data),
+  updateStatus:    (id, status) => api.patch(`/api/orders/${id}/status`, { status }),
+  delete:          (id)         => api.delete(`/api/orders/${id}`),
 };
 
 // ── Customer Service ──────────────────────────────────────────────────────────

@@ -4,10 +4,8 @@ import com.workshop.order.dto.CreateOrderRequest;
 import com.workshop.order.dto.CreateOrderResponse;
 import com.workshop.order.entity.Order;
 import com.workshop.order.service.OrderService;
-
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
-
 import java.util.List;
 
 @RestController
@@ -31,7 +29,6 @@ public class OrderController {
     public ResponseEntity<Order> searchOrder(
             @RequestParam(name = "orderNumber", required = false) String orderNumber,
             @RequestParam(name = "license", required = false) String license) {
-
         return service.searchOrder(orderNumber, license)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -43,14 +40,12 @@ public class OrderController {
         return service.createNewOrder();
     }
 
-    // ✅ GET ORDER BY ID (FIXED)
+    // ✅ GET ORDER BY ID
     @GetMapping("/{id}")
-    public ResponseEntity<Order> getOrderById(@PathVariable Long id) {
-        return service.getAllOrders().stream()
-                .filter(o -> o.getId().equals(id))
-                .findFirst()
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<Order> getOrderById(@PathVariable("id") Long id) {
+        return service.getOrderById(id) != null
+                ? ResponseEntity.ok(service.getOrderById(id))
+                : ResponseEntity.notFound().build();
     }
 
     // ✅ GET ALL
@@ -61,14 +56,16 @@ public class OrderController {
 
     // ✅ DELETE
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteOrder(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteOrder(@PathVariable("id") Long id) {
         service.deleteOrder(id);
         return ResponseEntity.noContent().build();
     }
 
     // ✅ UPDATE
     @PutMapping("/{id}")
-    public ResponseEntity<Order> updateOrder(@PathVariable Long id, @RequestBody Order order) {
+    public ResponseEntity<Order> updateOrder(
+            @PathVariable("id") Long id,
+            @RequestBody Order order) {
         order.setId(id);
         return ResponseEntity.ok(service.saveOrder(order));
     }
@@ -76,14 +73,8 @@ public class OrderController {
     // ✅ CREATE ORDER FROM PLANNING
     @PostMapping("/from-planning")
     public CreateOrderResponse createFromPlanning(@RequestBody CreateOrderRequest request) {
-
         System.out.println("/from-planning called");
-
         Order ord = service.createOrderFromPlanning(request);
-
-        return new CreateOrderResponse(
-                ord.getId(),
-                ord.getOrderNumber()
-        );
+        return new CreateOrderResponse(ord.getId(), ord.getOrderNumber());
     }
 }

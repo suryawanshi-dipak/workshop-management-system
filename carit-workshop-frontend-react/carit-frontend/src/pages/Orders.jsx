@@ -92,19 +92,21 @@ function LicenseLookup({ allCars, allCustomers, resolvedCar, resolvedCustomer, o
   );
 }
 
-// ── Resolved Car + Customer summary cards ─────────────────────────────────────
+// ── Resolved Car + Customer summary cards — matches Planning exactly ──────────
 function ResolvedCard({ car, customer }) {
   if (!car) return null;
   const makeColors = { BMW: '#1c69d4', Audi: '#bb0a30', Volkswagen: '#001e50', Ford: '#003380', Toyota: '#eb0a1e' };
   const badgeBg = makeColors[car.make] || 'var(--navy)';
+
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 12 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+      {/* Car card */}
       <div style={{ padding: '10px 12px', borderRadius: 8, background: 'var(--gray-50)', border: '1.5px solid var(--gray-200)', display: 'flex', alignItems: 'center', gap: 10 }}>
         <div style={{ width: 34, height: 34, borderRadius: 7, background: badgeBg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 9, fontWeight: 700, flexShrink: 0, letterSpacing: '0.04em' }}>
-          {car.make?.slice(0,3).toUpperCase()}
+          {car.make?.slice(0, 3).toUpperCase()}
         </div>
         <div>
-          <div style={{ fontWeight: 600, fontSize: 13 }}>{car.make} {car.model}</div>
+          <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--gray-900)' }}>{car.make} {car.model}</div>
           <div style={{ fontSize: 11, color: 'var(--gray-500)', marginTop: 1 }}>
             {car.year && <span>{car.year} · </span>}
             <span style={{ fontFamily: 'monospace' }}>{car.carId}</span>
@@ -112,14 +114,18 @@ function ResolvedCard({ car, customer }) {
           {car.color && <div style={{ fontSize: 11, color: 'var(--gray-400)' }}>{car.color}</div>}
         </div>
       </div>
+
+      {/* Customer card */}
       {customer ? (
         <div style={{ padding: '10px 12px', borderRadius: 8, background: 'var(--gray-50)', border: '1.5px solid var(--gray-200)', display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--navy)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 600, flexShrink: 0 }}>
             {`${customer.firstName?.[0] || ''}${customer.lastName?.[0] || ''}`.toUpperCase()}
           </div>
           <div>
-            <div style={{ fontWeight: 600, fontSize: 13 }}>{customer.firstName} {customer.lastName}</div>
-            <div style={{ fontSize: 11, color: 'var(--gray-500)', marginTop: 1, fontFamily: 'monospace' }}>{customer.customerId}</div>
+            <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--gray-900)' }}>{customer.firstName} {customer.lastName}</div>
+            <div style={{ fontSize: 11, color: 'var(--gray-500)', marginTop: 1 }}>
+              <span style={{ fontFamily: 'monospace' }}>{customer.customerId}</span>
+            </div>
             {customer.phone && <div style={{ fontSize: 11, color: 'var(--gray-400)' }}>{customer.phone}</div>}
           </div>
         </div>
@@ -244,7 +250,6 @@ export default function Orders() {
 
   const openEdit = (item) => {
     setEditItem(item);
-    // Try to pre-fill resolved car/customer from existing order data
     const car = allCars.find(c => c.carId === item.carId) || null;
     const customer = car ? allCustomers.find(c => c.customerId === car.customerId) || null : null;
     setResolvedCar(car);
@@ -494,7 +499,7 @@ export default function Orders() {
 
             <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
 
-              {/* ── License plate lookup zone ── */}
+              {/* ── License plate lookup zone — matches Planning layout ── */}
               <div style={{ padding: '14px 16px', background: 'rgba(13,43,92,0.03)', border: '1px solid var(--gray-200)', borderRadius: 10 }}>
                 <LicenseLookup
                   allCars={allCars}
@@ -504,7 +509,11 @@ export default function Orders() {
                   onResolved={(car, customer) => { setResolvedCar(car); setResolvedCustomer(customer); }}
                   onClear={() => { setResolvedCar(null); setResolvedCustomer(null); }}
                 />
-                <ResolvedCard car={resolvedCar} customer={resolvedCustomer} />
+                {resolvedCar && (
+                  <div style={{ marginTop: 12 }}>
+                    <ResolvedCard car={resolvedCar} customer={resolvedCustomer} />
+                  </div>
+                )}
               </div>
 
               {/* ── Service type + status ── */}

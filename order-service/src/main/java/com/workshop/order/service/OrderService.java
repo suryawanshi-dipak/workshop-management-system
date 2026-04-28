@@ -1,8 +1,10 @@
 package com.workshop.order.service;
 
 import com.workshop.order.dto.CreateOrderRequest;
+import com.workshop.order.dto.OrderActivityRequest;
 import com.workshop.order.dto.OrderPartRequest;
 import com.workshop.order.entity.Order;
+import com.workshop.order.entity.OrderActivityLine;
 import com.workshop.order.entity.OrderPart;
 import com.workshop.order.repository.OrderRepository;
 
@@ -28,7 +30,7 @@ public class OrderService {
         return repository.findAll();
     }
 
-    // ✅ DELETE (SAFE)
+    // ✅ DELETE
     public void deleteOrder(Long id) {
         if (!repository.existsById(id)) {
             throw new RuntimeException("Order not found: " + id);
@@ -36,46 +38,12 @@ public class OrderService {
         repository.deleteById(id);
     }
 
-    // ✅ CREATE / UPDATE
-    public Order saveOrder(Order order) {
-
-        if (order.getId() == null) {
-            order.setOrderNumber(generateOrderNumber());
-
-            if (order.getCreatedAt() == null) {
-                order.setCreatedAt(LocalDate.now());
-            }
-        } else {
-            Order existing = repository.findById(order.getId())
-                    .orElseThrow(() -> new RuntimeException("Order not found"));
-
-            order.setOrderNumber(existing.getOrderNumber());
-
-            if (order.getCreatedAt() == null) {
-                order.setCreatedAt(existing.getCreatedAt());
-            }
-        }
-
-        if (order.getParts() != null) {
-            order.getParts().forEach(p -> {
-                p.setOrder(order);
-                if (order.getId() == null) {
-                    p.setId(null);
-                }
-            });
-        }
-
-        if (order.getActivityLines() != null) {
-            order.getActivityLines().forEach(a -> {
-                a.setOrder(order);
-                if (order.getId() == null) {
-                    a.setId(null);
-                }
-            });
-        }
-
-        return repository.save(order);
+    // ✅ GET BY ID
+    public Order getOrderById(Long id) {
+        return repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Order not found: " + id));
     }
+
     // ✅ SEARCH
     public Optional<Order> searchOrder(String orderNumber, String license) {
         if (orderNumber != null && !orderNumber.isEmpty()) {
@@ -87,17 +55,40 @@ public class OrderService {
         return Optional.empty();
     }
 
-    // ✅ GET BY ID
-    public Order getOrderById(Long id) {
-        return repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Order not found: " + id));
-    }
-
     // ✅ NEW ORDER PREVIEW
     public Order createNewOrder() {
         Order order = new Order();
         order.setOrderNumber(generateOrderNumber());
         return order;
+    }
+
+    // ✅ CREATE / UPDATE (React frontend flow)
+    public Order saveOrder(Order order) {
+
+        if (order.getId() == null) {
+            order.setOrderNumber(generateOrderNumber());
+            if (order.getCreatedAt() == null) {
+                order.setCreatedAt(LocalDate.now());
+            }
+        } else {
+            Order existing = repository.findById(order.getId())
+                    .orElseThrow(() -> new RuntimeException("Order not found"));
+            order.setOrderNumber(existing.getOrderNumber());
+            if (order.getCreatedAt() == null) {
+                order.setCreatedAt(existing.getCreatedAt());
+            }
+        }
+
+        // ✅ Fix back-references so cascade writes children correctly
+        if (order.getParts() != null) {
+            order.getParts().forEach(p -> p.setOrder(order));
+        }
+
+        if (order.getActivityLines() != null) {
+            order.getActivityLines().forEach(a -> a.setOrder(order));
+        }
+
+        return repository.save(order);
     }
 
     // ⚠️ IMPROVED (still simple, not perfect for concurrency)
@@ -115,32 +106,53 @@ public class OrderService {
         ord.setCreatedAt(LocalDate.now());
         ord.setStatus("Scheduled");
 
+        // Planning-flow fields
         ord.setLicense(request.getLicense());
         ord.setCustomerName(request.getCustomerName());
         ord.setCustomerNumber(request.getCustomerNumber());
         ord.setCarMileage(request.getCarMileage());
         ord.setCarMake(request.getCarMake());
 
-        if (request.getParts() != null) {
-            List<OrderPart> parts = new ArrayList<>();
+        // React frontend fields (present when called from Planning "Create Order")
+        ord.setCustomerId(request.getCustomerId());
+        ord.setCarId(request.getCarId());
+        ord.setServiceType(request.getServiceType());
+        ord.setNotes(request.getNotes());
+        ord.setPrice(request.getPrice());
 
+        // ✅ Map parts — was missing part.setUnit()
+        if (request.getParts() != null && !request.getParts().isEmpty()) {
+            List<OrderPart> parts = new ArrayList<>();
             for (OrderPartRequest p : request.getParts()) {
                 OrderPart part = new OrderPart();
                 part.setPartNumber(p.getPartNo());
                 part.setDescription(p.getDescription());
                 part.setQuantity(p.getQuantity());
-
+                part.setUnit(p.getUnit());                           // ← was missing
                 part.setUnitPrice(
-                        p.getPrice() != null
-                                ? new java.math.BigDecimal(p.getPrice().toString())
+                        p.getUnitPrice() != null
+                                ? new java.math.BigDecimal(p.getUnitPrice().toString())
                                 : null
                 );
-
-                part.setOrder(ord);
+                part.setOrder(ord);                                  // ← back-reference
                 parts.add(part);
             }
-
             ord.setParts(parts);
+        }
+
+        // ✅ Map activity lines — was completely missing
+        if (request.getActivities() != null && !request.getActivities().isEmpty()) {
+            List<OrderActivityLine> activities = new ArrayList<>();
+            for (OrderActivityRequest a : request.getActivities()) {
+                OrderActivityLine line = new OrderActivityLine();
+                line.setActivityCode(a.getActivityCode());
+                line.setDescription(a.getDescription());
+                line.setHours(a.getHours());
+                line.setHourlyRate(a.getHourlyRate());
+                line.setOrder(ord);                                  // ← back-reference
+                activities.add(line);
+            }
+            ord.setActivityLines(activities);
         }
 
         return repository.save(ord);
